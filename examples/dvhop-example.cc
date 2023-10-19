@@ -8,6 +8,9 @@
 #include "ns3/point-to-point-module.h"
 #include "ns3/wifi-module.h"
 #include "ns3/netanim-module.h"
+
+#include "ns3/random-variable-stream.h"
+
 #include <iostream>
 #include <cmath>
 
@@ -36,6 +39,12 @@ public:
 private:
   ///\name parameters
   //\{
+
+  uint32_t beaconCount; // number of beacons
+  double max_rand_val; // Maximum random value
+  double min_rand_val; // Minimum random value
+  uint32_t seed; // randomization seed
+
   /// Number of nodes
   uint32_t size;
   /// Distance between nodes, meters
@@ -46,6 +55,7 @@ private:
   bool pcap;
   /// Print routes if true
   bool printRoutes;
+
   //\}
 
   ///\name network
@@ -76,6 +86,10 @@ int main (int argc, char **argv)
 
 //-----------------------------------------------------------------------------
 DVHopExample::DVHopExample () :
+  beaconCount(3),
+  max_rand_val(10000.0),
+  min_rand_val(0.0),
+  seed(12345),
   size (10),
   step (100),
   totalTime (10),
@@ -90,7 +104,7 @@ DVHopExample::Configure (int argc, char **argv)
   // Enable DVHop logs by default. Comment this if too noisy
   LogComponentEnable("DVHopRoutingProtocol", LOG_LEVEL_ALL);
 
-  SeedManager::SetSeed (12345);
+  SeedManager::SetSeed (seed);
   CommandLine cmd;
 
   cmd.AddValue ("pcap", "Write PCAP traces.", pcap);
@@ -98,6 +112,9 @@ DVHopExample::Configure (int argc, char **argv)
   cmd.AddValue ("size", "Number of nodes.", size);
   cmd.AddValue ("time", "Simulation time, s.", totalTime);
   cmd.AddValue ("step", "Grid step, m", step);
+  cmd.AddValue ("seed", "Randomization seed", seed);
+  cmd.AddValue ("beaconCount", "Number of beacons", beaconCount);
+
 
   cmd.Parse (argc, argv);
   return true;
@@ -157,7 +174,22 @@ DVHopExample::CreateNodes ()
 void
 DVHopExample::CreateBeacons ()
 {
-  Ptr<Ipv4RoutingProtocol> proto = nodes.Get (0)->GetObject<Ipv4>()->GetRoutingProtocol ();
+  uint32_t step_size = size / beaconCount;
+  uint32_t i;
+  for(i=0; i<beaconCount; ++i) {
+    uint32_t node_id = i * step_size;
+
+    Ptr<Ipv4RoutingProtocol> proto = nodes.Get( node_id )->GetObject<Ipv4>()->GetRoutingProtocol();
+    Ptr<dvhop::RoutingProtocol> dvhop = DynamicCast<dvhop::RoutingProtocol>(proto);
+    dvhop->SetIsBeacon(true);
+
+
+   Ptr<UniformRandomVariable> rand = CreateObject<UniformRandomVariable>();
+   dvhop->SetPosition( rand->GetValue( min_rand_val, max_rand_val ), rand->GetValue( min_rand_val, max_rand_val ) );
+  }
+
+
+/*  Ptr<Ipv4RoutingProtocol> proto = nodes.Get (0)->GetObject<Ipv4>()->GetRoutingProtocol ();
   Ptr<dvhop::RoutingProtocol> dvhop = DynamicCast<dvhop::RoutingProtocol> (proto);
   dvhop->SetIsBeacon (true);
   dvhop->SetPosition (123.42, 4534.452);
@@ -172,7 +204,7 @@ DVHopExample::CreateBeacons ()
   proto = nodes.Get (9)->GetObject<Ipv4>()->GetRoutingProtocol ();
   dvhop = DynamicCast<dvhop::RoutingProtocol> (proto);
   dvhop->SetIsBeacon (true);
-  dvhop->SetPosition (123.42, 9873.45);
+  dvhop->SetPosition (123.42, 9873.45); */
 
 }
 
