@@ -104,7 +104,6 @@ DVHopExample::Configure (int argc, char **argv)
   // Enable DVHop logs by default. Comment this if too noisy
   LogComponentEnable("DVHopRoutingProtocol", LOG_LEVEL_ALL);
 
-  SeedManager::SetSeed (seed);
   CommandLine cmd;
 
   cmd.AddValue ("pcap", "Write PCAP traces.", pcap);
@@ -117,6 +116,9 @@ DVHopExample::Configure (int argc, char **argv)
 
 
   cmd.Parse (argc, argv);
+
+  SeedManager::SetSeed (seed);
+
   return true;
 }
 
