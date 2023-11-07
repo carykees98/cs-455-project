@@ -12,7 +12,9 @@
 #include "ns3/random-variable-stream.h"
 
 #include <iostream>
+#include <fstream>
 #include <cmath>
+#include <cstdio>
 
 using namespace ns3;
 
@@ -44,6 +46,9 @@ private:
   double max_rand_val; // Maximum random value
   double min_rand_val; // Minimum random value
   uint32_t seed; // randomization seed
+  std::string savePath; // path to save layout to
+  std::string loadPath; // path to load layout from
+
 
   /// Number of nodes
   uint32_t size;
@@ -71,6 +76,10 @@ private:
   void InstallInternetStack ();
   void InstallApplications ();
   void CreateBeacons();
+
+  // Custom
+  void SetupLayout();
+  void LoadLayout();
 };
 
 int main (int argc, char **argv)
@@ -90,6 +99,8 @@ DVHopExample::DVHopExample () :
   max_rand_val(10000.0),
   min_rand_val(0.0),
   seed(12345),
+  savePath(""),
+  loadPath(""),
   size (10),
   step (100),
   totalTime (10),
@@ -113,7 +124,8 @@ DVHopExample::Configure (int argc, char **argv)
   cmd.AddValue ("step", "Grid step, m", step);
   cmd.AddValue ("seed", "Randomization seed", seed);
   cmd.AddValue ("beaconCount", "Number of beacons", beaconCount);
-
+//  cmd.AddValue ("saveTo", "Save the generated layout to a file", savePath);
+  cmd.AddValue ("loadFrom", "Load a layout from a file", loadPath);
 
   cmd.Parse (argc, argv);
 
@@ -122,15 +134,32 @@ DVHopExample::Configure (int argc, char **argv)
   return true;
 }
 
+
+void DVHopExample::SetupLayout() {
+  if(loadPath == "") {
+    CreateNodes();
+    CreateDevices();
+    InstallInternetStack();
+    CreateBeacons();
+  } else {
+    LoadLayout();
+  }
+
+}
+
 void
 DVHopExample::Run ()
 {
 //  Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold", UintegerValue (1)); // enable rts cts all the time.
-  CreateNodes ();
+
+/*  CreateNodes ();
   CreateDevices ();
   InstallInternetStack ();
 
   CreateBeacons();
+*/
+
+  SetupLayout();
 
   std::cout << "Starting simulation for " << totalTime << " s ...\n";
 
@@ -145,6 +174,70 @@ DVHopExample::Run ()
 void
 DVHopExample::Report (std::ostream &)
 {
+}
+
+
+// cheesecake
+void DVHopExample::LoadLayout() {
+  struct nodeLoadStruct {
+    bool isBeacon;
+    double xPos;
+    double yPos;
+  };
+
+  std::vector<nodeLoadStruct> nodesVector;
+
+  std::ifstream layoutStream(loadPath);
+  std::cout << "Loading from file " << loadPath << std::endl;
+
+  // Load file into vector of data
+  std::string line;
+  while( layoutStream.peek() != EOF ) {
+    std::getline( layoutStream, line );
+    std::istringstream stringStream(line);
+
+    nodeLoadStruct node;
+    stringStream >> node.isBeacon;
+    stringStream >> node.xPos;
+    stringStream >> node.yPos;
+
+    nodesVector.push_back(node);
+  }
+
+  // Create and name nodes
+  nodes.Create( nodesVector.size() );
+  auto i = nodesVector.size(); // set to vector size to get proper var type, then set back to 0 in loop
+  for( i=0; i<nodesVector.size(); ++i ) {
+    // Name node
+    std::ostringstream os;
+    os << "node-" << i;
+    std::cout << "Loading node: " << os.str() << std::endl;
+    Names::Add( os.str(), nodes.Get(i) );
+  }
+
+  // Do internet stuff
+  CreateDevices();
+  InstallInternetStack();
+
+  // install mobility helper
+  MobilityHelper mobility;
+  mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+  mobility.Install(nodes);
+
+  // Move node positions and set beacon status
+  for( i=0; i<nodesVector.size(); ++i) {
+    Ptr<Ipv4RoutingProtocol> proto = nodes.Get( i )->GetObject<Ipv4>()->GetRoutingProtocol();
+    Ptr<dvhop::RoutingProtocol> dvhop = DynamicCast<dvhop::RoutingProtocol>(proto);
+
+    // Set beacon status
+    dvhop->SetIsBeacon( nodesVector[i].isBeacon );
+
+    // Move node into position
+    Ptr<ConstantPositionMobilityModel> p = nodes.Get(i)->GetObject<ConstantPositionMobilityModel>();
+    std::cout << nodesVector[i].xPos << " " << nodesVector[i].yPos << std::endl;
+    p->SetPosition( Vector( nodesVector[i].xPos, nodesVector[i].yPos, 0 ) );
+  }
+
 }
 
 void
