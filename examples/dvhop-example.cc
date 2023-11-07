@@ -41,7 +41,6 @@ public:
 private:
   ///\name parameters
   //\{
-
   uint32_t beaconCount; // number of beacons
   double max_rand_val; // Maximum random value
   double min_rand_val; // Minimum random value
@@ -94,6 +93,7 @@ int main (int argc, char **argv)
 }
 
 //-----------------------------------------------------------------------------
+// Initialize default DVHopExample variable values
 DVHopExample::DVHopExample () :
   beaconCount(3),
   max_rand_val(10000.0),
@@ -109,6 +109,7 @@ DVHopExample::DVHopExample () :
 {
 }
 
+// Parse and load command line args into variables
 bool
 DVHopExample::Configure (int argc, char **argv)
 {
@@ -134,30 +135,26 @@ DVHopExample::Configure (int argc, char **argv)
   return true;
 }
 
-
+// Simple function that decides how to initialize the layout of the nodes
 void DVHopExample::SetupLayout() {
-  if(loadPath == "") {
-    CreateNodes();
-    CreateDevices();
-    InstallInternetStack();
-    CreateBeacons();
-  } else {
+  // Layout file provided
+  if(loadPath != "") {
     LoadLayout();
+    return;
   }
 
+  // No layout file provided
+  CreateNodes();
+  CreateDevices();
+  InstallInternetStack();
+  CreateBeacons();
 }
 
+// Run the simulation
 void
 DVHopExample::Run ()
 {
 //  Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold", UintegerValue (1)); // enable rts cts all the time.
-
-/*  CreateNodes ();
-  CreateDevices ();
-  InstallInternetStack ();
-
-  CreateBeacons();
-*/
 
   SetupLayout();
 
@@ -177,7 +174,7 @@ DVHopExample::Report (std::ostream &)
 }
 
 
-// cheesecake
+// Load the layout of nodes from file provided in command arguments ('loadPath')
 void DVHopExample::LoadLayout() {
   struct nodeLoadStruct {
     bool isBeacon;
@@ -240,6 +237,7 @@ void DVHopExample::LoadLayout() {
 
 }
 
+// Create nodes in a line based on 'step' and 'size' (optionally provided in command line)
 void
 DVHopExample::CreateNodes ()
 {
@@ -266,6 +264,7 @@ DVHopExample::CreateNodes ()
   mobility.Install (nodes);
 }
 
+// Turn 'beaconCount' number of nodes into beacons (optionally provided in command line)
 void
 DVHopExample::CreateBeacons ()
 {
@@ -282,28 +281,9 @@ DVHopExample::CreateBeacons ()
    Ptr<UniformRandomVariable> rand = CreateObject<UniformRandomVariable>();
    dvhop->SetPosition( rand->GetValue( min_rand_val, max_rand_val ), rand->GetValue( min_rand_val, max_rand_val ) );
   }
-
-
-/*  Ptr<Ipv4RoutingProtocol> proto = nodes.Get (0)->GetObject<Ipv4>()->GetRoutingProtocol ();
-  Ptr<dvhop::RoutingProtocol> dvhop = DynamicCast<dvhop::RoutingProtocol> (proto);
-  dvhop->SetIsBeacon (true);
-  dvhop->SetPosition (123.42, 4534.452);
-
-
-  proto = nodes.Get (4)->GetObject<Ipv4>()->GetRoutingProtocol ();
-  dvhop = DynamicCast<dvhop::RoutingProtocol> (proto);
-  dvhop->SetIsBeacon (true);
-  dvhop->SetPosition (6663.42, 566.646);
-
-
-  proto = nodes.Get (9)->GetObject<Ipv4>()->GetRoutingProtocol ();
-  dvhop = DynamicCast<dvhop::RoutingProtocol> (proto);
-  dvhop->SetIsBeacon (true);
-  dvhop->SetPosition (123.42, 9873.45); */
-
 }
 
-
+// Create wireless devices to install into all nodes
 void
 DVHopExample::CreateDevices ()
 {
@@ -322,6 +302,7 @@ DVHopExample::CreateDevices ()
     }
 }
 
+// Install wireless devices into all nodes
 void
 DVHopExample::InstallInternetStack ()
 {
