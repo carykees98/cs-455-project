@@ -115,7 +115,7 @@ namespace ns3 {
       sockerr = Socket::ERROR_NOTERROR;
       Ipv4Address dst = header.GetDestination ();
 
-      NS_LOG_DEBUG("Sending packet to: " << dst<< ", From:"<< iface.GetLocal ());
+      NS_LOG_DEBUG("Sending packet to: " << dst<< ", From:"<< iface.GetLocal () );
 
       //Construct a route object to return
       //TODO: Remove hardcoded routes
@@ -461,6 +461,7 @@ namespace ns3 {
               NS_LOG_DEBUG (iface.GetLocal ()<< " Sending Hello...");
               Ptr<Packet> packet = Create<Packet>();
               packet->AddHeader (helloHeader);
+              
               // Send to all-hosts broadcast if on /32 addr, subnet-directed otherwise
               Ipv4Address destination;
               if (iface.GetMask () == Ipv4Mask::GetOnes ())
@@ -502,13 +503,14 @@ namespace ns3 {
       NS_LOG_DEBUG ("sender:           " << sender);
       NS_LOG_DEBUG ("receiver:         " << receiver);
 
+      //cheesecake
 
       FloodingHeader fHeader;
       packet->RemoveHeader (fHeader);
       NS_LOG_DEBUG ("Update the entry for: " << fHeader.GetBeaconAddress ());
       UpdateHopsTo (fHeader.GetBeaconAddress (), fHeader.GetHopCount () + 1, fHeader.GetXPosition (), fHeader.GetYPosition ());
 
-
+      NS_LOG_DEBUG("Hop count:         " << fHeader.GetHopCount() );
 
     }
 
