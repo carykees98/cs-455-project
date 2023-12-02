@@ -16,6 +16,7 @@
 #include <fstream>
 #include <cmath>
 #include <cstdio>
+#include <ctime>
 
 using namespace ns3;
 
@@ -98,7 +99,7 @@ int main(int argc, char **argv)
 DVHopExample::DVHopExample() : beaconCount(3),
                                max_rand_val(10000.0),
                                min_rand_val(0.0),
-                               seed(12345),
+                               seed(std::time(nullptr)),
                                savePath(""),
                                loadPath(""),
                                size(10),
