@@ -10,6 +10,7 @@
 #include "ns3/netanim-module.h"
 
 #include "ns3/random-variable-stream.h"
+#include "ns3/system-thread.h"
 
 #include <iostream>
 #include <fstream>
@@ -79,6 +80,7 @@ private:
   // Custom
   void SetupLayout();
   void LoadLayout();
+  static void KillNodes(const NodeContainer* nodes);
 };
 
 int main (int argc, char **argv)
@@ -150,6 +152,41 @@ void DVHopExample::SetupLayout() {
   CreateBeacons();
 }
 
+void DVHopExample::KillNodes(const NodeContainer* nodes) {
+	// Count how many nodes are used
+	int node_count = 0;
+	NodeContainer::Iterator i;
+	for(i=nodes->Begin(); i != nodes->End(); ++i, ++node_count);
+
+	while (1) {
+		Ptr<UniformRandomVariable> rand = CreateObject<UniformRandomVariable>();
+		double random_val = rand->GetValue(0, 0.1);
+
+		/*
+		Ptr<ConstantPositionMobilityModel> p = nodes.Get(i)->GetObject<ConstantPositionMobilityModel>();
+		std::cout << nodesVector[i].xPos << " " << nodesVector[i].yPos << std::endl;
+    		p->SetPosition( Vector( nodesVector[i].xPos, nodesVector[i].yPos, 0 ) );
+		*/
+
+		if( random_val == 0.0 ) {
+			//Ptr<ConstantPositionMobilityModel> node = nodes.Get( (int)rand->GetValue(0, node_count) )->GetObject<ConstantPositionMobilityModel>();
+			Ptr<Node> node = nodes->Get( (int)(rand->GetValue(0, node_count)) ); // get selected node
+
+			Ptr<ConstantPositionMobilityModel> m = node->GetObject<ConstantPositionMobilityModel>(); // Get mobility helper for node
+			auto node_id = node->GetId();
+
+			auto new_x = node_id * 100;
+
+			m->SetPosition( Vector(new_x, 0, 0) );
+
+			std::cout << "Killed node " << node_id << std::endl;
+		}
+
+		break; // the compiler questioned my decision making and i do not feel like unindenting
+
+	}
+}
+
 // Run the simulation
 void
 DVHopExample::Run ()
@@ -160,7 +197,10 @@ DVHopExample::Run ()
 
   std::cout << "Starting simulation for " << totalTime << " s ...\n";
 
-  Simulator::Stop (Seconds (totalTime));
+//  Simulator::Schedule( Seconds(0), &KillNodes, &nodes ); // Enable the node killer function the second the simulator starts
+ for(double i=0; i<(100*totalTime); i+=0.01) Simulator::Schedule( Seconds(i), &KillNodes, &nodes ); // schedule 100 kill attempts per second of running the simulation
+
+ Simulator::Stop (Seconds (totalTime));
 
   AnimationInterface anim("animation.xml");
 
