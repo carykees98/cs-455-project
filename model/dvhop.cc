@@ -359,34 +359,34 @@ namespace ns3 {
     }
 
 
-// double
-// RoutingProtocol::CalculateAverageHopDistance() const
-// {
-//     double totalDistance = 0.0;
-//     int totalHops = 0;
+ double
+ RoutingProtocol::CalculateAverageHopDistance() const
+ {
+     double totalDistance = 0.0;
+     int totalHops = 0;
 
-//     std::vector<Ipv4Address> knownBeacons = m_disTable.GetKnownBeacons();
+     std::vector<Ipv4Address> knownBeacons = m_disTable.GetKnownBeacons();
 
-//     // Iterate over each known beacon
-//     for (const auto& beacon : knownBeacons) {
-//         // Retrieve the distance table of the beacon
-//         double x, y;
-//         uint16_t hops;
-//         if (m_disTable.GetBeaconInfo(beacon, hops, x, y)) {
-//             // Calculate distance using ns3's CalculateDistance
-//             double distance = CalculateDistance(m_xPosition, m_yPosition, x, y);
+     // Iterate over each known beacon
+     for (const auto& beacon : knownBeacons) {
+         // Retrieve the distance table of the beacon
+         double x, y;
+         uint16_t hops;
+         if (m_disTable.GetBeaconInfo(beacon, hops, x, y)) {
+             // Calculate distance using ns3's CalculateDistance
+             double distance = CalculateDistance(m_xPosition, m_yPosition, x, y);
 
-//             // Increment total distance and total hops
-//             totalDistance += distance;
-//             totalHops += hops;
-//         }
-//     }
+             // Increment total distance and total hops
+             totalDistance += distance;
+             totalHops += hops;
+         }
+     }
 
-//     // Calculate average hop distance
-//     double averageHopDistance = (totalHops > 0) ? (totalDistance / totalHops) : 0.0;
+     // Calculate average hop distance
+     double averageHopDistance = (totalHops > 0) ? (totalDistance / totalHops) : 0.0;
 
-//     return averageHopDistance;
-// }
+     return averageHopDistance;
+ }
 
 
 

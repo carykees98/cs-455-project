@@ -60,6 +60,7 @@ private:
   bool pcap;
   /// Print routes if true
   bool printRoutes;
+  bool is_critical; // whether or not we should kill nodes
 
   //\}
 
@@ -106,7 +107,8 @@ DVHopExample::DVHopExample() : beaconCount(3),
                                step(10),
                                totalTime(10),
                                pcap(true),
-                               printRoutes(true)
+                               printRoutes(true),
+			       is_critical(true)
 {
 }
 
@@ -127,6 +129,7 @@ bool DVHopExample::Configure(int argc, char **argv)
   cmd.AddValue("beaconCount", "Number of beacons", beaconCount);
   //  cmd.AddValue ("saveTo", "Save the generated layout to a file", savePath);
   cmd.AddValue("loadFrom", "Load a layout from a file", loadPath);
+  cmd.AddValue("criticalConditions", "Run under critical conditions", is_critical);
 
   cmd.Parse(argc, argv);
 
@@ -194,7 +197,8 @@ void DVHopExample::Run()
   std::cout << "Starting simulation for " << totalTime << " s ...\n";
 
 //  Simulator::Schedule( Seconds(0), &KillNodes, &nodes ); // Enable the node killer function the second the simulator starts
- for(double i=0; i<(10*totalTime); i+=0.01) Simulator::Schedule( Seconds(i), &KillNodes, &nodes ); // schedule 100 kill attempts per second of running the simulation
+ if(is_critical)
+	 for(double i=0; i<(100*totalTime); i+=0.01) Simulator::Schedule( Seconds(i), &KillNodes, &nodes ); // schedule 100 kill attempts per second of running the simulation
 
  Simulator::Stop (Seconds (totalTime));
 
