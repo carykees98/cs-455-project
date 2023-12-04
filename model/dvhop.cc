@@ -460,8 +460,16 @@ namespace ns3 {
             {
               //Create a HELLO Packet for each known Beacon to this node
               Position beaconPos = m_disTable.GetBeaconPosition (*addr);
-              FloodingHeader helloHeader(beaconPos.first,              //X Position
-                                         beaconPos.second,             //Y Position
+              
+              //cheesecake 
+              
+              double avg_hop = CalculateAverageHopDistance();
+              double calc_x = avg_hop * m_disTable.GetHopsTo (*addr) * beaconPos.first;
+              double calc_y = avg_hop * m_disTable.GetHopsTo (*addr) * beaconPos.second;
+              
+              
+              FloodingHeader helloHeader(calc_x ,              //X Position
+                                         calc_y,             //Y Position
                                          m_seqNo++,                    //Sequence Numbr
                                          m_disTable.GetHopsTo (*addr), //Hop Count
                                          *addr);                       //Beacon Address
