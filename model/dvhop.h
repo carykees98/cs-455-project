@@ -97,6 +97,7 @@ namespace ns3 {
       //Used to simulate jitter
       Ptr<UniformRandomVariable> m_URandom;
 
+      double CalculateAverageHopDistance() const;
 
     };
   }

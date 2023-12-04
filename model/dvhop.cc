@@ -12,7 +12,7 @@
 #include "ns3/adhoc-wifi-mac.h"
 #include "ns3/string.h"
 #include "ns3/pointer.h"
-
+#include "ns3/vector.h"
 
 
 NS_LOG_COMPONENT_DEFINE ("DVHopRoutingProtocol");
@@ -363,7 +363,7 @@ namespace ns3 {
  RoutingProtocol::CalculateAverageHopDistance() const
  {
      double totalDistance = 0.0;
-     int totalHops = 0;
+     uint16_t totalHops = 0;
 
      std::vector<Ipv4Address> knownBeacons = m_disTable.GetKnownBeacons();
 
@@ -371,8 +371,9 @@ namespace ns3 {
      for (const auto& beacon : knownBeacons) {
          // Retrieve the distance table of the beacon
          double x, y;
-         uint16_t hops;
-         if (m_disTable.GetBeaconInfo(beacon, hops, x, y)) {
+//         uint16_t hops;
+
+/*         if (m_disTable.GetBeaconInfo(beacon, hops, x, y)) {
              // Calculate distance using ns3's CalculateDistance
              double distance = CalculateDistance(m_xPosition, m_yPosition, x, y);
 
@@ -380,6 +381,15 @@ namespace ns3 {
              totalDistance += distance;
              totalHops += hops;
          }
+*/
+	Position beacon_pos = m_disTable.GetBeaconPosition(beacon);
+	x = beacon_pos.first;
+	y = beacon_pos.second;
+
+	double distance = CalculateDistance( Vector2D(m_xPosition, m_yPosition), Vector2D(x, y) );
+	totalDistance += distance;
+	totalHops += m_disTable.GetHopsTo(beacon);
+
      }
 
      // Calculate average hop distance
