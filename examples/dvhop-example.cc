@@ -276,6 +276,11 @@ void DVHopExample::LoadLayout()
     Ptr<ConstantPositionMobilityModel> p = nodes.Get(i)->GetObject<ConstantPositionMobilityModel>();
     std::cout << nodesVector[i].xPos << " " << nodesVector[i].yPos << std::endl;
     p->SetPosition(Vector(nodesVector[i].xPos, nodesVector[i].yPos, 0));
+    
+    // Update beacon position
+    if(nodesVector[i].isBeacon) {
+        dvhop->SetPosition(nodesVector[i].xPos, nodesVector[i].yPos);
+    }
   }
 }
 
