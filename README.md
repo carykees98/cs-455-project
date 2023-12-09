@@ -3,12 +3,13 @@ dvhop
 
 DV-hop positioning algorithm for NS3.20
 
-###Installing
-Just download ns-allinone-3.20 and then:
+To use, download ns-allinone-3.20 and then:
 
-Code must be unzipped and placed in ```/path/to/ns3/src/dvhop``` directory
-The ```test_generator.py``` file may be used for generating layout files that can be read by the main dvhop program (requires python). Run ```python3 test_generator.py -h``` for usage details
-Run ```./waf run "dvhop-example <args>"``` to run the dvhop program
+ - Code must be unzipped and placed in ```/path/to/ns3/src/dvhop``` directory
+
+ - The ```test_generator.py``` file may be used for generating layout files that can be read by the main dvhop program (requires python). Run ```python3 test_generator.py -h``` for usage details
+ - Run ```./waf run "dvhop-example <args>"``` to run the dvhop program
+
 Possible args:
 ```
 --pcap, bool, Enable or disable writing PCAP traces
