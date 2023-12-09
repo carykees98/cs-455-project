@@ -78,12 +78,11 @@ namespace ns3
       char* const p2 = reinterpret_cast<char*>(&midY);
       std::copy(p2, p2 + sizeof(double), reinterpret_cast<char*>(&m_yPos));
 
-
-      std::cout << "Deserializing coordinates ("<<m_xPos <<","<<m_yPos<<")"<<std::endl;
-
       m_seqNo = i.ReadU16 ();
       m_hopCount = i.ReadU16 ();
       ReadFrom (i, m_beaconId);
+
+      std::cout << "Deserializing coordinates for " << m_beaconId << " ("<<m_xPos <<","<<m_yPos<<")"<<std::endl;
 
       //Validate the readed bytes match the serialized size
       uint32_t dist = i.GetDistanceFrom (start);
