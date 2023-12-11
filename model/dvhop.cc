@@ -437,6 +437,21 @@ namespace ns3 {
      return false;
     }
 
+//cheesecake
+/* given a list of beacons, guestimate where the location is */
+std::pair<double, double> RoutingProtocol::Multilateration( const std::vector<Ipv4Address>* beacons ) {
+        /* store coords as pair X, Y */
+        std::pair<double, double> ret = std::make_pair(0.0, 0.0);
+
+        /* Loop over every beacon */
+        std::vector<Ipv4Address>::const_iterator beacon_addr;
+        for(beacon_addr = beacons.begin(); beacon_addr != beacons.end(); ++beacon_addr) {
+                uint16_t hop_count = m_disTable.GetHopsTo(*beacon_addr); // Get hops from node to beacon
+                Position beacon_pos = m_disTable.GetBeaconPosition(*beacon_addr); // Get the true position of the beacon
+        }
+        
+        return ret;
+}
 
 
     void
@@ -455,18 +470,29 @@ namespace ns3 {
           /*TODO: Remove the hardcoded position*/
 
           std::vector<Ipv4Address> knownBeacons = m_disTable.GetKnownBeacons ();
+          
+          //calculate multilateration position
+          std::pair<double, double> temp = Multilateration( &knownBeacons );
+          double calc_x = temp.first;
+          double calc_y = temp.second;
+          
+          // if we are a beacon, override to true position
+          if(m_isBeacon) {
+                calc_x = m_xPosition;
+                calc_y = m_yPosition;
+          }
+          
           std::vector<Ipv4Address>::const_iterator addr;
           for (addr = knownBeacons.begin (); addr != knownBeacons.end (); ++addr)
             {
               //Create a HELLO Packet for each known Beacon to this node
-              Position beaconPos = m_disTable.GetBeaconPosition (*addr);
+              //Position beaconPos = m_disTable.GetBeaconPosition (*addr); 
               
               //cheesecake 
               
-              double avg_hop = CalculateAverageHopDistance();
+              /*double avg_hop = CalculateAverageHopDistance();
               double calc_x = avg_hop * m_disTable.GetHopsTo (*addr) * beaconPos.first;
-              double calc_y = avg_hop * m_disTable.GetHopsTo (*addr) * beaconPos.second;
-              
+              double calc_y = avg_hop * m_disTable.GetHopsTo (*addr) * beaconPos.second;*/
               
               FloodingHeader helloHeader(calc_x ,              //X Position
                                          calc_y,             //Y Position
@@ -474,6 +500,7 @@ namespace ns3 {
                                          m_disTable.GetHopsTo (*addr), //Hop Count
                                          *addr);                       //Beacon Address
               NS_LOG_DEBUG (iface.GetLocal ()<< " Sending Hello...");
+              std::cout << iface.GetLocal() << " estimated pos: " << calc_x << " " << calc_y << std::endl;
               Ptr<Packet> packet = Create<Packet>();
               packet->AddHeader (helloHeader);
               // Send to all-hosts broadcast if on /32 addr, subnet-directed otherwise
@@ -489,6 +516,11 @@ namespace ns3 {
               Time jitter = Time (MilliSeconds (m_URandom->GetInteger (0, 10)));
               Simulator::Schedule (jitter, &RoutingProtocol::SendTo, this , socket, packet, destination);
             }
+            
+/*          double avg_hop = CalculateAverageHopDistance();
+          for( addr = knownBeacons.begin(); addr != knownBeacons.end(); ++addr) {
+                
+          }*/
 
           /*If this node is a beacon, it should broadcast its position always*/
           NS_LOG_DEBUG ("Node "<< iface.GetLocal () << " isBeacon? " << m_isBeacon);
@@ -517,8 +549,6 @@ namespace ns3 {
                 }
               Time jitter = Time (MilliSeconds (m_URandom->GetInteger (0, 10)));
               Simulator::Schedule (jitter, &RoutingProtocol::SendTo, this , socket, packet, destination);
-
-
             }
         }
     }

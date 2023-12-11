@@ -98,6 +98,7 @@ namespace ns3 {
       Ptr<UniformRandomVariable> m_URandom;
 
       double CalculateAverageHopDistance() const;
+      std::pair<double, double> Multilateration( const std::vector<Ipv4Address>* beacons );
 
     };
   }
