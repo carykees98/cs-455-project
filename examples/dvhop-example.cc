@@ -198,7 +198,7 @@ void DVHopExample::Run()
 
 //  Simulator::Schedule( Seconds(0), &KillNodes, &nodes ); // Enable the node killer function the second the simulator starts
  if(is_critical)
-	 for(double i=0; i<(100*totalTime); i+=0.01) Simulator::Schedule( Seconds(i), &KillNodes, &nodes ); // schedule 100 kill attempts per second of running the simulation
+	 for(double i=0; i<(10*totalTime); i+=0.1) Simulator::Schedule( Seconds(i), &KillNodes, &nodes ); // schedule 10 kill attempts per second of running the simulation
 
  Simulator::Stop (Seconds (totalTime));
 

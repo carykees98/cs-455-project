@@ -14,6 +14,8 @@
 #include "ns3/pointer.h"
 #include "ns3/vector.h"
 
+#define DOUBLE_INF std::numeric_limits<double>::infinity()
+
 
 NS_LOG_COMPONENT_DEFINE ("DVHopRoutingProtocol");
 
@@ -439,16 +441,126 @@ namespace ns3 {
 
 //cheesecake
 /* given a list of beacons, guestimate where the location is */
-std::pair<double, double> RoutingProtocol::Multilateration( const std::vector<Ipv4Address>* beacons ) {
+Position RoutingProtocol::Multilateration( std::vector<Ipv4Address> beacons ) {
         /* store coords as pair X, Y */
-        std::pair<double, double> ret = std::make_pair(0.0, 0.0);
+        Position ret = std::make_pair( DOUBLE_INF, DOUBLE_INF );
+        
+        // We only have 1 beacon, break
+        if(beacons.begin() == beacons.end()) {
+                std::cout << "Breaking multilateration" << std::endl;
+                return ret;
+        }
+        
+        // Keep track of important numbers
+        std::vector<double> slopes; // slope of the perpendicular line to the beacon-beacon line
+        std::vector<Position> intercepts; // intercept of the perp line with the center of the region between where the beacon radii intercept the beacon-beacon line
 
         /* Loop over every beacon */
         std::vector<Ipv4Address>::const_iterator beacon_addr;
-        for(beacon_addr = beacons.begin(); beacon_addr != beacons.end(); ++beacon_addr) {
-                uint16_t hop_count = m_disTable.GetHopsTo(*beacon_addr); // Get hops from node to beacon
-                Position beacon_pos = m_disTable.GetBeaconPosition(*beacon_addr); // Get the true position of the beacon
+        for(beacon_addr = beacons.begin(); beacon_addr != beacons.end(); ++beacon_addr) { // dont initialize to beacon+1 in order to avoid issues where the beginning == ending
+                if (beacon_addr == beacons.begin()) continue; // dont procede to calculating slopes and stuff if we have only loaded one beacon into our list
+                
+                // radical math magic
+                // Current beacon data
+                uint16_t hop_a = m_disTable.GetHopsTo(*beacon_addr);
+                Position pos_a = m_disTable.GetBeaconPosition(*beacon_addr);
+                
+                // Previous beacon data
+                uint16_t hop_b = m_disTable.GetHopsTo(*(beacon_addr-1));
+                Position pos_b = m_disTable.GetBeaconPosition(*(beacon_addr-1));
+                
+                // Calculate slope data
+                double top_val = pos_b.second - pos_a.second;
+                double bot_val = pos_b.first - pos_a.first;
+                double beacon_slope = top_val / bot_val; // Slope of line between 2 beacons
+                double perp_slope = (-1 * bot_val) / (top_val); // Slope perpendicular to the line between beacons
+                
+                
+                // Get position of intersection between beacon_slope and beacon a
+                double slope_val = (double)hop_a * beacon_slope;
+                Position point_a;
+                
+                point_a.first = slope_val + pos_a.first;
+                point_a.second = slope_val + pos_a.second;
+                
+                // Calculate beacon b data
+                slope_val = (double)hop_b * beacon_slope;
+                Position point_b;
+                
+                point_b.first = slope_val - pos_b.first;
+                point_b.second = slope_val - pos_b.second;
+                
+                // calculate the intercept point between the beacon slope, and the perp line that passes throught the node we want
+                Position perp_pos;
+                perp_pos.first = (point_a.first + point_b.first) / 2;
+                perp_pos.second = (point_a.second + point_b.second) / 2;
+                
+                slopes.push_back(perp_slope);
+                intercepts.push_back(perp_pos);
         }
+        
+        // we previously guarantee that there are at least 2 beacons
+        // Current beacon data
+        uint16_t hop_a = m_disTable.GetHopsTo(*beacon_addr);
+        Position pos_a = m_disTable.GetBeaconPosition(*beacon_addr);
+        
+        // Previous beacon data
+        uint16_t hop_b = m_disTable.GetHopsTo(*(beacon_addr-1));
+        Position pos_b = m_disTable.GetBeaconPosition(*(beacon_addr-1));
+        
+        // Calculate slope data
+        double top_val = pos_b.second - pos_a.second;
+        double bot_val = pos_b.first - pos_a.first;
+        double beacon_slope = top_val / bot_val; // Slope of line between 2 beacons
+        double perp_slope = (-1 * bot_val) / (top_val); // Slope perpendicular to the line between beacons
+        
+        
+        // Get position of intersection between beacon_slope and beacon a
+        double slope_val = (double)hop_a * beacon_slope;
+        Position point_a;
+        
+        point_a.first = slope_val + pos_a.first;
+        point_a.second = slope_val + pos_a.second;
+        
+        // Calculate beacon b data
+        slope_val = (double)hop_b * beacon_slope;
+        Position point_b;
+        
+        point_b.first = slope_val - pos_b.first;
+        point_b.second = slope_val - pos_b.second;
+        
+        // calculate the intercept point between the beacon slope, and the perp line that passes throught the node we want
+        Position perp_pos;
+        perp_pos.first = (point_a.first + point_b.first) / 2;
+        perp_pos.second = (point_a.second + point_b.second) / 2;
+        
+        slopes.push_back(perp_slope);
+        intercepts.push_back(perp_pos);
+        
+        
+        //radical math magic 2: engage with zorp
+        
+        auto current_slope = slopes.begin();
+        auto current_pos = intercepts.begin();
+        
+        double previous_slope = *current_slope;
+        ret = *current_pos;
+        
+        for(; current_slope != slopes.end(); ++current_slope, ++current_pos) {
+                // y - y1 = m(x - x1) --> y = m(x - x1) + y1 ----> y = mx + (y1 - mx1) <-- const value b
+                
+                // calculate our b constants
+                double b1 = current_pos->second - ( *current_slope * current_pos->first );
+                double b2 = ret.second - ( previous_slope * ret.first );
+                
+                // slope1*x1 + b1 = slope2*x2 + b2 ---> b1-b2 = (slope2-slope1)x ----> x = (b1-b2)/(slope2-slope1) = x, plug in to find y
+                ret.first = (b1-b2)/(previous_slope - *current_slope); // new x value
+                ret.second = (previous_slope * ret.first) + b2;
+                
+                previous_slope = ( *current_slope + previous_slope ) / 2; // update previous slope to be line between our 2 lines
+        }
+        
+        std::cout << "Guesstimated position: " << ret.first << " " << ret.second << std::endl;
         
         return ret;
 }
@@ -472,7 +584,7 @@ std::pair<double, double> RoutingProtocol::Multilateration( const std::vector<Ip
           std::vector<Ipv4Address> knownBeacons = m_disTable.GetKnownBeacons ();
           
           //calculate multilateration position
-          std::pair<double, double> temp = Multilateration( &knownBeacons );
+          Position temp = Multilateration( knownBeacons );
           double calc_x = temp.first;
           double calc_y = temp.second;
           
